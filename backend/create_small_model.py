@@ -38,7 +38,7 @@ def main():
     words = original_model.index_to_key[:VOCAB_SIZE]
 
     # Retrieve vectors for those words.
-    vectors = original_model.get_normed_vectors()[:VOCAB_SIZE]
+    vectors = original_model.vectors[:VOCAB_SIZE]
 
     # Create a new KeyedVectors object.
     small_model = KeyedVectors(
