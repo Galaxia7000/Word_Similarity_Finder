@@ -1,25 +1,30 @@
+from pathlib import Path
 from typing import Optional
 
-import gensim.downloader as api
+from gensim.models import KeyedVectors
 
 
 class ModelManager:
     """
-    Handles loading and accessing the configured
-    Word2Vec model.
+    Loads and manages the local compact Word2Vec model.
+
+    The model is stored with the application so that deployment
+    does not require downloading the original multi-gigabyte model.
     """
 
-    def __init__(self, model_name: str):
-        self.model_name = model_name
-        self.model = None
+    def __init__(
+        self,
+        model_path: str
+    ):
+        self.model_path = Path(model_path)
+
+        self.model: Optional[KeyedVectors] = None
+
         self.loading = False
 
-    def load_model(self):
+    def load_model(self) -> KeyedVectors:
         """
-        Load the Word2Vec model on demand.
-
-        Gensim caches the downloaded model locally,
-        so subsequent loads can reuse the cached file.
+        Load the local Word2Vec model on demand.
         """
 
         if self.model is not None:
@@ -30,20 +35,40 @@ class ModelManager:
                 "Word2Vec model is already being loaded."
             )
 
+        if not self.model_path.exists():
+            raise FileNotFoundError(
+                f"Word2Vec model not found at: "
+                f"{self.model_path}"
+            )
+
         self.loading = True
 
         try:
+
             print(
-                f"Loading Word2Vec model: "
-                f"{self.model_name}"
+                f"Loading Word2Vec model from: "
+                f"{self.model_path}"
             )
 
-            self.model = api.load(
-                self.model_name
+            self.model = (
+                KeyedVectors.load_word2vec_format(
+                    str(self.model_path),
+                    binary=True
+                )
             )
 
             print(
                 "Word2Vec model loaded successfully."
+            )
+
+            print(
+                f"Vocabulary size: "
+                f"{len(self.model.key_to_index):,}"
+            )
+
+            print(
+                f"Vector size: "
+                f"{self.model.vector_size}"
             )
 
             return self.model
@@ -52,20 +77,12 @@ class ModelManager:
             self.loading = False
 
     def is_loaded(self) -> bool:
-        """
-        Check whether the model is currently loaded.
-        """
-
         return self.model is not None
 
     def contains_word(
         self,
         word: str
     ) -> bool:
-        """
-        Check whether the word exists in
-        the model vocabulary.
-        """
 
         model = self.load_model()
 
@@ -75,13 +92,11 @@ class ModelManager:
         self,
         word: str
     ):
-        """
-        Retrieve the vector associated with a word.
-        """
 
         model = self.load_model()
 
         if word not in model.key_to_index:
+
             raise KeyError(
                 f"The word '{word}' is not present "
                 f"in the model vocabulary."
@@ -90,18 +105,12 @@ class ModelManager:
         return model[word]
 
     def get_vector_size(self) -> int:
-        """
-        Return vector dimensionality.
-        """
 
         model = self.load_model()
 
         return model.vector_size
 
     def get_vocabulary_size(self) -> int:
-        """
-        Return vocabulary size.
-        """
 
         model = self.load_model()
 
@@ -112,13 +121,11 @@ class ModelManager:
         word: str,
         top_n: int = 10
     ):
-        """
-        Retrieve semantically similar words.
-        """
 
         model = self.load_model()
 
         if word not in model.key_to_index:
+
             raise KeyError(
                 f"The word '{word}' is not present "
                 f"in the model vocabulary."

@@ -1,5 +1,3 @@
-import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,10 +12,12 @@ from services import model_manager as model_manager_module
 
 app = FastAPI(
     title=settings.APP_NAME,
+
     description=(
         "Backend API for the Word2Vec-based "
         "Word Similarity Finder."
     ),
+
     version="1.0.0"
 )
 
@@ -30,7 +30,8 @@ allowed_origins = [
     "http://localhost:5173"
 ]
 
-if settings.FRONTEND_URL:
+if settings.FRONTEND_URL not in allowed_origins:
+
     allowed_origins.append(
         settings.FRONTEND_URL
     )
@@ -38,60 +39,69 @@ if settings.FRONTEND_URL:
 
 app.add_middleware(
     CORSMiddleware,
+
     allow_origins=allowed_origins,
+
     allow_credentials=True,
+
     allow_methods=["*"],
-    allow_headers=["*"],
+
+    allow_headers=["*"]
 )
 
 
 # --------------------------------------------------
-# Model initialization
+# MODEL
 # --------------------------------------------------
-
-# Make the Gensim cache location configurable.
-# On Render we will point this to the persistent disk.
-os.environ["GENSIM_DATA_DIR"] = (
-    settings.GENSIM_DATA_DIR
-)
-
 
 model_manager_module.model_manager = (
-    ModelManager(settings.MODEL_NAME)
+    ModelManager(
+        settings.MODEL_PATH
+    )
 )
 
 
 # --------------------------------------------------
-# Routes
+# ROUTES
 # --------------------------------------------------
 
-app.include_router(word_router)
+app.include_router(
+    word_router
+)
 
-app.include_router(sentence_router)
+app.include_router(
+    sentence_router
+)
 
 
 # --------------------------------------------------
-# Basic endpoints
+# BASIC ENDPOINTS
 # --------------------------------------------------
 
 @app.get("/")
 def root():
+
     return {
-        "message": (
-            "Word Similarity Finder API is running."
-        ),
-        "model": settings.MODEL_NAME
+        "message":
+            "Word Similarity Finder API is running.",
+
+        "model":
+            "word2vec-google-news-50k"
     }
 
 
 @app.get("/health")
 def health_check():
+
     return {
-        "status": "online",
-        "service": "word-similarity-finder",
-        "model_loaded": (
+        "status":
+            "online",
+
+        "service":
+            "word-similarity-finder",
+
+        "model_loaded":
             model_manager_module
             .model_manager
             .is_loaded()
-        )
     }

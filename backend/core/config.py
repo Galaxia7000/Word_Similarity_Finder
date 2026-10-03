@@ -1,4 +1,10 @@
 import os
+from pathlib import Path
+
+
+BASE_DIR = Path(
+    __file__
+).resolve().parent.parent
 
 
 class Settings:
@@ -8,9 +14,13 @@ class Settings:
 
     APP_NAME = "Word Similarity Finder API"
 
-    MODEL_NAME = os.getenv(
-        "W2V_MODEL_NAME",
-        "word2vec-google-news-300"
+    MODEL_PATH = os.getenv(
+        "W2V_MODEL_PATH",
+        str(
+            BASE_DIR
+            / "models"
+            / "word2vec-google-news-50k.bin"
+        )
     )
 
     VECTOR_PREVIEW_SIZE = 12
@@ -20,11 +30,6 @@ class Settings:
     FRONTEND_URL = os.getenv(
         "FRONTEND_URL",
         "http://localhost:5173"
-    )
-
-    GENSIM_DATA_DIR = os.getenv(
-        "GENSIM_DATA_DIR",
-        os.path.expanduser("~/gensim-data")
     )
 
 
